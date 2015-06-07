@@ -4,7 +4,7 @@ var moment =  require('moment');
 var Promise = require("bluebird");
 var base64 = require('hi-base64');
 
-var cdlib = require('../cd_lib/cd_lib');
+var cdlib = require('../cd_lib');
 
 var rabbitMQ = {
     server: cdlib.getRabbitMQAddress(),
