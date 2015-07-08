@@ -96,6 +96,48 @@ var correctTricoFile = function (fileToConvert) {
 
 };
 
+var readFile =  function (file, cvsFile) {
+    return new Promise(function (resolve, reject) {
+
+        console.log(file);
+
+        var XLS = require('xlsjs'),
+            workbook = XLS.readFile(file),
+            sheet_name_list = workbook.SheetNames,
+            Sheet1A1 = workbook.Sheets[sheet_name_list[0]]['A1'].v,
+            csv = XLS.utils.sheet_to_csv(workbook.Sheets[sheet_name_list[0]]),
+            LineByLineReader = require('line-by-line'),
+            lineCnt = 0,
+            newoutput = "";
+            //lr = new LineByLineReader(cvsFile);
+
+
+        fs.writeFile(cvsFile, csv, function (err) {
+            if (err) {
+                console.log(err);
+                reject(err);
+            } else {
+                console.log("The file was saved!");
+                var input = fs.createReadStream(syncTrico.destDir + "/" + syncTrico.destFile), // read file
+                    output = fs.createWriteStream(syncTrico.destDir + "/" + syncTrico.destFile + ".txt"); // write file
+
+                input // take input
+                    .pipe(RemoveFirstLine()) // pipe through line remover
+                    .pipe(RemoveFirstLine()) // pipe through line remover
+                    .pipe(RemoveFirstLine()) // pipe through line remover
+                    .pipe(output); // save to file
+
+                setTimeout(function () {
+                    fs.unlinkSync(syncTrico.destDir + "/" + syncTrico.destFile);
+                    fs.renameSync(syncTrico.destDir + "/" + syncTrico.destFile + ".txt", syncTrico.destDir + "/" + syncTrico.destFile);
+                    correctTricoFile(syncTrico.destDir + "/" + syncTrico.destFile);
+                    var data = "File Converted";
+                    resolve(data);
+                }, 5000);
+            }
+        });
+    });
+};
 // promise
 var checkForFile =  function (syncTrico) {
     return new Promise(function (resolve, reject) {
@@ -147,51 +189,6 @@ var copyFile = function (src, dest, atime, mtime) {
     fs.utimesSync(dest, atime, mtime);
     resolve(src);
 };
-
-
-var readFile =  function (file, cvsFile) {
-    return new Promise(function (resolve, reject) {
-
-        console.log(file);
-
-        var XLS = require('xlsjs'),
-            workbook = XLS.readFile(file),
-            sheet_name_list = workbook.SheetNames,
-            Sheet1A1 = workbook.Sheets[sheet_name_list[0]]['A1'].v,
-            csv = XLS.utils.sheet_to_csv(workbook.Sheets[sheet_name_list[0]]),
-            LineByLineReader = require('line-by-line'),
-            lineCnt = 0,
-            newoutput = "";
-            //lr = new LineByLineReader(cvsFile);
-
-
-        fs.writeFile(cvsFile, csv, function (err) {
-            if (err) {
-                console.log(err);
-                reject(err);
-            } else {
-                console.log("The file was saved!");
-                var input = fs.createReadStream(syncTrico.destDir + "/" + syncTrico.destFile), // read file
-                    output = fs.createWriteStream(syncTrico.destDir + "/" + syncTrico.destFile + ".txt"); // write file
-
-                input // take input
-                    .pipe(RemoveFirstLine()) // pipe through line remover
-                    .pipe(RemoveFirstLine()) // pipe through line remover
-                    .pipe(RemoveFirstLine()) // pipe through line remover
-                    .pipe(output); // save to file
-
-                setTimeout(function () {
-                    fs.unlinkSync(syncTrico.destDir + "/" + syncTrico.destFile);
-                    fs.renameSync(syncTrico.destDir + "/" + syncTrico.destFile + ".txt", syncTrico.destDir + "/" + syncTrico.destFile);
-                    correctTricoFile(syncTrico.destDir + "/" + syncTrico.destFile);
-                    var data = "File Converted";
-                    resolve(data);
-                }, 5000);
-            }
-        });
-    });
-};
-
 
 var Transform = require('stream').Transform;
 var util = require('util');
