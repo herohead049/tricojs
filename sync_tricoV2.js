@@ -1,12 +1,30 @@
 /*jslint nomen: true */
 /*jslint node:true */
+/*jslint vars: true */
+/*jslint es5: true */
 
 "use strict";
 
 var fs = require('fs-extra');
 var _ = require('lodash');
-var moment =  require('moment');
+var moment = require('moment');
 var Promise = require("bluebird");
+
+
+/*
+    Version: 0.1.0
+    Description:
+        reads in the trico export xls (srcDir)
+        copy the xls to local directory (destDir)
+        converts to CSV
+        after conversion the file is then parsed to remove the carriage returns
+    Usage:
+        the converted file is used by DPA for daily reports.
+
+*/
+
+
+// main config object
 
 var syncTrico = {
     'srcDir': "\\\\ch01sf00\\groups$\\cis\\CITS Server Inventory\\Trico Export",
@@ -20,7 +38,8 @@ var syncTrico = {
     'srcList': null
 };
 
-var correctTricoFile = function (fileToConvert) {
+
+function correctTricoFile(fileToConvert) {
     var fs = require('fs-extra'),
         LineByLineReader = require('line-by-line'),
         lr = new LineByLineReader(fileToConvert),
@@ -94,12 +113,14 @@ var correctTricoFile = function (fileToConvert) {
         writeFile(tempFile, newLines);
     });
 
-};
+}
 
-var readFile =  function (file, cvsFile) {
+function readFile(file, cvsFile) {
     return new Promise(function (resolve, reject) {
 
         console.log(file);
+
+        // converts xls to csv
 
         var XLS = require('xlsjs'),
             workbook = XLS.readFile(file),
@@ -109,8 +130,10 @@ var readFile =  function (file, cvsFile) {
             LineByLineReader = require('line-by-line'),
             lineCnt = 0,
             newoutput = "";
-            //lr = new LineByLineReader(cvsFile);
+        //lr = new LineByLineReader(cvsFile);
 
+
+        // write out converted file
 
         fs.writeFile(cvsFile, csv, function (err) {
             if (err) {
@@ -120,6 +143,8 @@ var readFile =  function (file, cvsFile) {
                 console.log("The file was saved!");
                 var input = fs.createReadStream(syncTrico.destDir + "/" + syncTrico.destFile), // read file
                     output = fs.createWriteStream(syncTrico.destDir + "/" + syncTrico.destFile + ".txt"); // write file
+
+                // remove first 3 lines of CSV
 
                 input // take input
                     .pipe(RemoveFirstLine()) // pipe through line remover
@@ -137,9 +162,9 @@ var readFile =  function (file, cvsFile) {
             }
         });
     });
-};
+}
 // promise
-var checkForFile =  function (syncTrico) {
+function checkForFile(syncTrico) {
     return new Promise(function (resolve, reject) {
 
         syncTrico.destFileStats = fs.statSync(syncTrico.destDir + "/" + syncTrico.destFileXLS);
@@ -161,7 +186,9 @@ var checkForFile =  function (syncTrico) {
 
         if (moment(syncTrico.destFileStats.mtime).unix() !== syncTrico.lastSec) {
             console.log("need to copy file");
-            fs.copySync(syncTrico.srcDir + "/" + syncTrico.latestSrc, syncTrico.destDir + "/" + syncTrico.destFileXLS, {replace: true});
+            fs.copySync(syncTrico.srcDir + "/" + syncTrico.latestSrc, syncTrico.destDir + "/" + syncTrico.destFileXLS, {
+                replace: true
+            });
             fs.utimesSync(syncTrico.destDir + "/" + syncTrico.destFileXLS, syncTrico.latestSrcStats.atime, syncTrico.latestSrcStats.mtime);
             //readFile(syncTrico.destDir + "/" + syncTrico.destFileXLS, syncTrico.destDir + "/" + syncTrico.destFile, function (done) { console.log("done");});
             resolve(syncTrico.destDir + "/" + syncTrico.destFile);
@@ -170,7 +197,7 @@ var checkForFile =  function (syncTrico) {
         }
 
     });
-};
+}
 
 checkForFile(syncTrico)
     .then(function (file) {
@@ -185,7 +212,9 @@ checkForFile(syncTrico)
 
 
 var copyFile = function (src, dest, atime, mtime) {
-    fs.copySync(src, dest, {replace: true});
+    fs.copySync(src, dest, {
+        replace: true
+    });
     fs.utimesSync(dest, atime, mtime);
     resolve(src);
 };
@@ -195,6 +224,7 @@ var util = require('util');
 
 
 // Transform sctreamer to remove first line
+
 function RemoveFirstLine(args) {
     if (!(this instanceof RemoveFirstLine)) {
         return new RemoveFirstLine(args);
@@ -203,8 +233,6 @@ function RemoveFirstLine(args) {
     this._buff = '';
     this._removed = false;
 }
-util.inherits(RemoveFirstLine, Transform);
-
 RemoveFirstLine.prototype._transform = function (chunk, encoding, done) {
     if (this._removed) { // if already removed
         this.push(chunk); // just push through buffer
@@ -226,8 +254,4 @@ RemoveFirstLine.prototype._transform = function (chunk, encoding, done) {
 };
 
 
-
-
-
-
-
+util.inherits(RemoveFirstLine, Transform);

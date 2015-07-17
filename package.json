@@ -1,16 +1,15 @@
 {
-    "name": "trico" ,
-    "version": "0.0.1",
+    "name": "trico",
+    "version": "0.1.0",
     "description": "Website for collecting data for backup tasks",
-    "author": "Craig David"
-,
-"dependencies" : {
-    "lodash": "latest",
-    "moment": "x.x.x",
-    "fs-extra": "0.x.0",
-    "xlsjs": "0.x.x",
-    "bluebird": "latest",
-    "hi-base64": "",
-    "amqplib": ""
+    "author": "Craig David",
+    "dependencies": {
+        "lodash": "latest",
+        "moment": "x.x.x",
+        "fs-extra": "0.x.0",
+        "xlsjs": "0.x.x",
+        "bluebird": "latest",
+        "hi-base64": "",
+        "amqplib": ""
     }
 }
