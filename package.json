@@ -1,16 +1,14 @@
 {
-  "name": "trico",
-  "version": "0.1.0",
-  "description": "Website for collecting data for backup tasks",
-  "author": "Craig David",
-  "dependencies": {
-    "amqplib": "",
-    "bluebird": "latest",
-    "cdlibjs": "^1.1.5",
-    "fs-extra": "0.x.0",
-    "hi-base64": "",
-    "lodash": "latest",
-    "moment": "x.x.x",
-    "xlsjs": "0.x.x"
-  }
+    "name": "trico",
+    "version": "0.1.0",
+    "description": "Website for collecting data for backup tasks",
+    "author": "Craig David",
+    "dependencies": {
+        "bluebird": "latest",
+        "cdlib-email": "0.0.1",
+        "fs-extra": "0.x.0",
+        "lodash": "latest",
+        "moment": "x.x.x",
+        "xlsjs": "0.x.x"
+    }
 }

@@ -3,12 +3,16 @@
 /*jslint vars: true */
 /*jslint es5: true */
 
-"use strict";
+/*eslint-env node */
+/*eslint quotes: [2, "single"], curly: 2*/
+
+'use strict';
 
 var fs = require('fs-extra');
 var _ = require('lodash');
 var moment = require('moment');
-var Promise = require("bluebird");
+var Promise = require('bluebird');
+var XLS = require('xlsjs');
 
 
 /*
@@ -27,10 +31,10 @@ var Promise = require("bluebird");
 // main config object
 
 var syncTrico = {
-    'srcDir': "\\\\ch01sf00\\groups$\\cis\\CITS Server Inventory\\Trico Export",
-    'destDir': "D:/scripts/Servers",
-    'destFile': "Trico.csv",
-    'destFileXLS': "Trico.xls",
+    'srcDir': '\\\\ch01sf00\\groups$\\cis\\CITS Server Inventory\\Trico Export',
+    'destDir': 'D:/scripts/Servers',
+    'destFile': 'Trico.csv',
+    'destFileXLS': 'Trico.xls',
     'lastestSrc': null,
     'lastSec': 0,
     'latestSrcStats': null,
@@ -48,14 +52,14 @@ function readFile(file, cvsFile) {
 
         // converts xls to csv
 
-        var XLS = require('xlsjs'),
-            workbook = XLS.readFile(file),
-            sheet_name_list = workbook.SheetNames,
-            Sheet1A1 = workbook.Sheets[sheet_name_list[0]]['A1'].v,
-            csv = XLS.utils.sheet_to_csv(workbook.Sheets[sheet_name_list[0]]),
-            LineByLineReader = require('line-by-line'),
-            lineCnt = 0,
-            newoutput = "";
+
+        var workbook = XLS.readFile(file),
+            sheetNameList = workbook.SheetNames,
+            //Sheet1A1 = workbook.Sheets[sheetNameList[0]]['A1'].v,
+            csv = XLS.utils.sheet_to_csv(workbook.Sheets[sheetNameList[0]]);
+        //var LineByLineReader = require('line-by-line');
+        //var lineCnt = 0,
+        //newoutput = "";
         //lr = new LineByLineReader(cvsFile);
 
 
@@ -66,9 +70,9 @@ function readFile(file, cvsFile) {
                 console.log(err);
                 reject(err);
             } else {
-                console.log("The file was saved!");
-                var input = fs.createReadStream(syncTrico.destDir + "/" + syncTrico.destFile), // read file
-                    output = fs.createWriteStream(syncTrico.destDir + "/" + syncTrico.destFile + ".txt"); // write file
+                console.log('The file was saved!');
+                var input = fs.createReadStream(syncTrico.destDir + '/' + syncTrico.destFile), // read file
+                    output = fs.createWriteStream(syncTrico.destDir + '/' + syncTrico.destFile + '.txt'); // write file
 
                 // remove first 3 lines of CSV
 
@@ -79,10 +83,10 @@ function readFile(file, cvsFile) {
                     .pipe(output); // save to file
 
                 setTimeout(function () {
-                    fs.unlinkSync(syncTrico.destDir + "/" + syncTrico.destFile);
-                    fs.renameSync(syncTrico.destDir + "/" + syncTrico.destFile + ".txt", syncTrico.destDir + "/" + syncTrico.destFile);
-                    correctTricoFile(syncTrico.destDir + "/" + syncTrico.destFile);
-                    var data = "File Converted";
+                    fs.unlinkSync(syncTrico.destDir + '/' + syncTrico.destFile);
+                    fs.renameSync(syncTrico.destDir + '/' + syncTrico.destFile + '.txt', syncTrico.destDir + '/' + syncTrico.destFile);
+                    correctTricoFile(syncTrico.destDir + '/' + syncTrico.destFile);
+                    var data = 'File Converted';
                     resolve(data);
                 }, 5000);
             }
@@ -93,11 +97,11 @@ function readFile(file, cvsFile) {
 function checkForFile(syncTrico) {
     return new Promise(function (resolve, reject) {
 
-        syncTrico.destFileStats = fs.statSync(syncTrico.destDir + "/" + syncTrico.destFileXLS);
+        syncTrico.destFileStats = fs.statSync(syncTrico.destDir + '/' + syncTrico.destFileXLS);
         syncTrico.srcList = fs.readdirSync(syncTrico.srcDir);
 
         _.each(syncTrico.srcList, function (f) {
-            var stats = fs.statSync(syncTrico.srcDir + "/" + f),
+            var stats = fs.statSync(syncTrico.srcDir + '/' + f),
                 mt = stats.mtime,
                 sec = moment(mt).unix();
 
@@ -111,13 +115,13 @@ function checkForFile(syncTrico) {
         console.log(syncTrico.latestSrc);
 
         if (moment(syncTrico.destFileStats.mtime).unix() !== syncTrico.lastSec) {
-            console.log("need to copy file");
-            fs.copySync(syncTrico.srcDir + "/" + syncTrico.latestSrc, syncTrico.destDir + "/" + syncTrico.destFileXLS, {
+            console.log('need to copy file');
+            fs.copySync(syncTrico.srcDir + '/' + syncTrico.latestSrc, syncTrico.destDir + '/' + syncTrico.destFileXLS, {
                 replace: true
             });
-            fs.utimesSync(syncTrico.destDir + "/" + syncTrico.destFileXLS, syncTrico.latestSrcStats.atime, syncTrico.latestSrcStats.mtime);
-            //readFile(syncTrico.destDir + "/" + syncTrico.destFileXLS, syncTrico.destDir + "/" + syncTrico.destFile, function (done) { console.log("done");});
-            resolve(syncTrico.destDir + "/" + syncTrico.destFile);
+            fs.utimesSync(syncTrico.destDir + '/' + syncTrico.destFileXLS, syncTrico.latestSrcStats.atime, syncTrico.latestSrcStats.mtime);
+            //readFile(syncTrico.destDir + '/' + syncTrico.destFileXLS, syncTrico.destDir + "/" + syncTrico.destFile, function (done) { console.log("done");});
+            resolve(syncTrico.destDir + '/' + syncTrico.destFile);
         } else {
             reject();
         }
@@ -127,13 +131,13 @@ function checkForFile(syncTrico) {
 
 checkForFile(syncTrico)
     .then(function (file) {
-        readFile(syncTrico.destDir + "/" + syncTrico.destFileXLS, file);
+        readFile(syncTrico.destDir + '/' + syncTrico.destFileXLS, file);
         return (file);
 
     }).catch(function (error) {
-        console.log("no file to convert");
+        console.log('no file to convert');
     }).finally(function () {
-        console.log("this will always run");
+        console.log('this will always run');
     });
 
 
@@ -188,10 +192,10 @@ function correctTricoFile(fileToConvert) {
         LineByLineReader = require('line-by-line'),
         lr = new LineByLineReader(fileToConvert),
         errorCount = 0,
-        preLine = "",
+        //preLine = '',
         errorFlag = false,
-        newLines = "",
-        firstPart = false,
+        newLines = '',
+        //firstPart = false,
         tempFile = syncTrico.destDir + '/new.csv';
 
 
@@ -215,12 +219,12 @@ function correctTricoFile(fileToConvert) {
     }
 
     function appendFile(file, data) {
-        var c = fs.appendFileSync(file, data);
+        fs.appendFileSync(file, data);
 
     }
 
     function writeFile(file, data) {
-        var fs = require('fs');
+        //var fs = require('fs');
         fs.writeFile(file, data, function (err) {
             if (err) {
                 return console.log(err);
