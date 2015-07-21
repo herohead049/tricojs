@@ -5,6 +5,7 @@
 
 /*eslint-env node */
 /*eslint quotes: [2, "single"], curly: 2*/
+/*eslint no-underscore-dangle: 0 */
 
 'use strict';
 
@@ -13,7 +14,7 @@ var _ = require('lodash');
 var moment = require('moment');
 var Promise = require('bluebird');
 var XLS = require('xlsjs');
-
+var cdLibEmail = require('cdlib-email');
 
 /*
     Version: 0.1.0
@@ -31,19 +32,26 @@ var XLS = require('xlsjs');
 // main config object
 
 var syncTrico = {
-    'srcDir': '\\\\ch01sf00\\groups$\\cis\\CITS Server Inventory\\Trico Export',
-    'destDir': 'D:/scripts/Servers',
-    'destFile': 'Trico.csv',
-    'destFileXLS': 'Trico.xls',
-    'lastestSrc': null,
-    'lastSec': 0,
-    'latestSrcStats': null,
-    'destFileStats': null,
-    'srcList': null
+    srcDir: '\\\\ch01sf00\\groups$\\cis\\CITS Server Inventory\\Trico Export',
+    destDir: 'D:/scripts/Servers',
+    destFile: 'Trico.csv',
+    destFileXLS: 'Trico.xls',
+    lastestSrc: null,
+    lastSec: 0,
+    latestSrcStats: null,
+    destFileStats: null,
+    srcList: null,
+    srcFile: null
 };
 
 
+var emailMsg = cdLibEmail.msgEmail;
 
+emailMsg.to = 'craig.david@mt.com';
+emailMsg.from = 'craig.david@mt.com';
+emailMsg.subject = 'Trico Pick up and convert process.';
+emailMsg.htmlData = 'here is the message';
+emailMsg.smtpServer = 'smtp.mt.com';
 
 function readFile(file, cvsFile) {
     return new Promise(function (resolve, reject) {
@@ -94,7 +102,7 @@ function readFile(file, cvsFile) {
     });
 }
 // promise
-function checkForFile(syncTrico) {
+function checkForFile() {
     return new Promise(function (resolve, reject) {
 
         syncTrico.destFileStats = fs.statSync(syncTrico.destDir + '/' + syncTrico.destFileXLS);
@@ -123,31 +131,36 @@ function checkForFile(syncTrico) {
             //readFile(syncTrico.destDir + '/' + syncTrico.destFileXLS, syncTrico.destDir + "/" + syncTrico.destFile, function (done) { console.log("done");});
             resolve(syncTrico.destDir + '/' + syncTrico.destFile);
         } else {
-            reject();
+            reject('No file found');
         }
 
     });
 }
 
-checkForFile(syncTrico)
+checkForFile()
     .then(function (file) {
         readFile(syncTrico.destDir + '/' + syncTrico.destFileXLS, file);
+        emailMsg.htmlData = 'Trico File converted:';
         return (file);
 
     }).catch(function (error) {
         console.log('no file to convert');
+        emailMsg.htmlData = 'No new Trico file found to convert. ' + error;
     }).finally(function () {
-        console.log('this will always run');
+        console.log('Sending email');
+        cdLibEmail.sendEmailHtml(emailMsg);
     });
 
 
-var copyFile = function (src, dest, atime, mtime) {
+function copyFile(src, dest, atime, mtime) {
+    syncTrico.srcFile = src;
     fs.copySync(src, dest, {
         replace: true
     });
+
     fs.utimesSync(dest, atime, mtime);
     resolve(src);
-};
+}
 
 var Transform = require('stream').Transform;
 var util = require('util');
