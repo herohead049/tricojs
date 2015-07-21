@@ -85,9 +85,9 @@ function readFile(file, cvsFile) {
                 // remove first 3 lines of CSV
 
                 input // take input
-                    .pipe(RemoveFirstLine()) // pipe through line remover
-                    .pipe(RemoveFirstLine()) // pipe through line remover
-                    .pipe(RemoveFirstLine()) // pipe through line remover
+                    .pipe(removeFirstLine()) // pipe through line remover
+                    .pipe(removeFirstLine()) // pipe through line remover
+                    .pipe(removeFirstLine()) // pipe through line remover
                     .pipe(output); // save to file
 
                 setTimeout(function () {
@@ -127,6 +127,7 @@ function checkForFile() {
             fs.copySync(syncTrico.srcDir + '/' + syncTrico.latestSrc, syncTrico.destDir + '/' + syncTrico.destFileXLS, {
                 replace: true
             });
+            syncTrico.srcFile = syncTrico.latestSrc;
             fs.utimesSync(syncTrico.destDir + '/' + syncTrico.destFileXLS, syncTrico.latestSrcStats.atime, syncTrico.latestSrcStats.mtime);
             //readFile(syncTrico.destDir + '/' + syncTrico.destFileXLS, syncTrico.destDir + "/" + syncTrico.destFile, function (done) { console.log("done");});
             resolve(syncTrico.destDir + '/' + syncTrico.destFile);
@@ -140,11 +141,13 @@ function checkForFile() {
 checkForFile()
     .then(function (file) {
         readFile(syncTrico.destDir + '/' + syncTrico.destFileXLS, file);
-        emailMsg.htmlData = 'Trico File converted:';
+        emailMsg.htmlData = 'Trico File converted:' + syncTrico.srcFile;
+        emailMsg.subject = 'Trico Pick up and convert process. File converted';
         return (file);
 
     }).catch(function (error) {
         console.log('no file to convert');
+        emailMsg.subject = 'Trico Pick up and convert process. File not found';
         emailMsg.htmlData = 'No new Trico file found to convert. ' + error;
     }).finally(function () {
         console.log('Sending email');
@@ -152,34 +155,24 @@ checkForFile()
     });
 
 
-function copyFile(src, dest, atime, mtime) {
-    syncTrico.srcFile = src;
-    fs.copySync(src, dest, {
-        replace: true
-    });
-
-    fs.utimesSync(dest, atime, mtime);
-    resolve(src);
-}
-
 var Transform = require('stream').Transform;
 var util = require('util');
 
 
 // Transform sctreamer to remove first line
 
-function RemoveFirstLine(args) {
-    if (!(this instanceof RemoveFirstLine)) {
-        return new RemoveFirstLine(args);
+function removeFirstLine(args) {
+    if (!(this instanceof removeFirstLine)) {
+        return new removeFirstLine(args);
     }
     Transform.call(this, args);
     this._buff = '';
     this._removed = false;
 }
 
-util.inherits(RemoveFirstLine, Transform);
+util.inherits(removeFirstLine, Transform);
 
-RemoveFirstLine.prototype._transform = function (chunk, encoding, done) {
+removeFirstLine.prototype._transform = function (chunk, encoding, done) {
     if (this._removed) { // if already removed
         this.push(chunk); // just push through buffer
     } else {
@@ -201,12 +194,12 @@ RemoveFirstLine.prototype._transform = function (chunk, encoding, done) {
 
 
 function correctTricoFile(fileToConvert) {
-    var fs = require('fs-extra'),
-        LineByLineReader = require('line-by-line'),
-        lr = new LineByLineReader(fileToConvert),
+    //var fs = require('fs-extra'),
+    var LineByLineReader = require('line-by-line');
+    var lr = new LineByLineReader(fileToConvert),
         errorCount = 0,
         //preLine = '',
-        errorFlag = false,
+        //errorFlag = false,
         newLines = '',
         //firstPart = false,
         tempFile = syncTrico.destDir + '/new.csv';
@@ -214,6 +207,7 @@ function correctTricoFile(fileToConvert) {
 
     lr.on('error', function (err) {
         // 'err' contains error object
+        console.log(err);
     });
 
     function isInt(n) {
@@ -261,7 +255,7 @@ function correctTricoFile(fileToConvert) {
             newLines = newLines + line;
             //console.log(line);
             //preLine = preLine + line;
-            errorFlag = true;
+            //errorFlag = true;
         }
 
         //appendFile('test/new.csv' , line + '\n');
